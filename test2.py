@@ -1,6 +1,8 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 import matplotlib.pyplot as plt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QApplication
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from numpy import random
@@ -9,15 +11,20 @@ from class_sort import Sort
 
 
 class Ui_MainWindow(object):
+    def __init__(self):
+        self.sortingTime = 10
+        self.algoNamesList = ['Merge Sort', 'Quick Sort', 'Intro Sort']
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(957, 523)
+        MainWindow.resize(960, 520)
         MainWindow.setStyleSheet("background-color:rgb(219, 239, 230)")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         #self.StartBtn = QtWidgets.QPushButton(self.PlotFrame, clicked=lambda: self.plotOnCanvas())
-        self.StartBtn = QtWidgets.QPushButton(self.centralwidget, clicked=lambda: self.plotOnCanvas())
-        self.StartBtn.setGeometry(QtCore.QRect(720, 370, 141, 50))
+        self.StartBtn = QtWidgets.QPushButton(self.centralwidget,
+                                                clicked=lambda: self.plotOnCanvas())
+        self.StartBtn.setGeometry(QtCore.QRect(720, 370, 140, 50))
         font = QtGui.QFont()
         font.setPointSize(10)
         self.StartBtn.setFont(font)
@@ -96,11 +103,19 @@ class Ui_MainWindow(object):
         self.formLayout.setItem(1, QtWidgets.QFormLayout.FieldRole, spacerItem1)
         spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.formLayout.setItem(5, QtWidgets.QFormLayout.FieldRole, spacerItem2)
+
         self.comboBox = QtWidgets.QComboBox(self.formLayoutWidget)
+        # setting geometry of combo box
+        self.comboBox.setGeometry(200, 150, 200, 50)
+
+        # setting font size and family
+        font = QFont("Arial", 12)
+        self.comboBox.setFont(font)
         self.comboBox.setStyleSheet("color:rgb(0, 15, 0);\n"
                                     "color-back-ground:rgb(126, 255, 245);\n"
                                     "")
         self.comboBox.setObjectName("comboBox")
+        self.comboBox.addItems(self.algoNamesList)
         self.formLayout.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.comboBox)
 
         #frame where pyPlot is going to be located
@@ -139,19 +154,39 @@ class Ui_MainWindow(object):
         self.labelBorderB.setText(_translate("MainWindow", "Last element:"))
 
     def plotOnCanvas(self):
-        ##clesr the canvas
+        # Generate the data to sort
+        self.amount = 20
+        self.lst = np.random.randint(0, 100, self.amount)
+        self.x = np.arange(0, self.amount, 1)
+
+        # Set up the animation timer
+        self.timer = self.canvas.new_timer(interval=self.sortingTime,
+                                           callbacks=[(self.animate, [], {})])
+
+        # Start the sorting algorithm
+        self.i = 0
+        self.j = 0
+        self.sort()
+
+    def sort(self):
+        # Bubble sort algorithm
+        self.n = len(self.lst)
+        self.timer.start()
+
+    def animate(self):
+        # Update the plot and wait for a short time
+        sortObj = Sort(self.lst, 1)
+        self.plot()
+        QApplication.processEvents()
+        sortObj = Sort(self.lst, 1)
+        sortObj.sort()
+        self.timer.stop()
+
+    def plot(self):
+        # Clear the previous plot and plot the current state of the list
         self.figure.clear()
-        x=["apple", "orange", "coconuts", "pawpaw"]
-        value= random.randint(50, size=4)
-        print(value)
-
-        #create the plot
-
-        plt.bar(x, value, color="cyan", width=0.4)
-        plt.xlabel("type of fruits")
-        plt.ylabel("no. of fruits")
-        plt.title("Random fruit in the basket")
-        #refresh
+        ax = self.figure.add_subplot(111)
+        ax.bar(self.x, self.lst)
         self.canvas.draw()
 
 

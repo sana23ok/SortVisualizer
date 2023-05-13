@@ -1,11 +1,13 @@
 import math
-#  методи
-#       a)	швидкого сортування;
-#       b)  інтроспективне сортування;
-#       c)  сортування злиттям (Д. фон Неймана);
+
+from PyQt5.QtWidgets import QApplication
 
 
-#-----------INTRO SORT--------------
+# from matplotlib.backends.backend_qt import MainWindow
+#from test2 import Ui_MainWindow
+
+
+# -----------INTRO SORT--------------
 def introSort(arr, start, end, depth_limit):
     if end - start <= 1:
         return
@@ -35,7 +37,6 @@ def partitionIntro(arr, start, end):
 
 
 def heapSort(arr, start, end):
-
     def heapify(parent):
         child = 2 * parent + 1
         if child < end:
@@ -52,7 +53,7 @@ def heapSort(arr, start, end):
         heapify(start)
 
 
-#-----------QUICK SORT--------------
+# -----------QUICK SORT--------------
 def quickSort(A, first, last):
     if first < last:
         if (last - first + 1) <= 3:
@@ -65,7 +66,7 @@ def quickSort(A, first, last):
 
 
 def insertionSort(A, first, last):
-    for i in range(first, last+1):
+    for i in range(first, last + 1):
         j = i
         while j > first:
             if A[j - 1] > A[j]:
@@ -91,18 +92,18 @@ def medianOf3(A, first, middle, last):
 
 def partition(A, first, last):
     x = A[last]
-    pInd = first-1
+    pInd = first - 1
 
     for j in range(first, last):
         if A[j] <= x:
             pInd += 1
             A[pInd], A[j] = A[j], A[pInd]
 
-    A[pInd+1], A[last] = A[last], A[pInd+1]
-    return pInd+1
+    A[pInd + 1], A[last] = A[last], A[pInd + 1]
+    return pInd + 1
 
 
-#-----------MERGE SORT--------------
+# -----------MERGE SORT--------------
 def merge(arr, left, mid, right):
     i = left
     j = mid
@@ -132,6 +133,7 @@ def merge(arr, left, mid, right):
     k = 0
 
     for i in range(left, right + 1):
+        # Update the plot after each merge operation
         arr[i] = tempArr[k]
         k += 1
 
@@ -145,21 +147,20 @@ def mergeSort(arr, left, right):
 
 
 class Sort:
-    arr = [15, 45, 47, 1, 2, 5, 77, 6, 25, 333, -84, -4, -44]
     choice = None
 
-    def __init__(self, choice):
+    def __init__(self, arr: [], choice: int):
         self.choice = choice
+        self.arr = arr
 
-    # if choice == 1:
-    # mergeSort(arr, 0, len(arr)-1)
-    # elif choice == 2:
-    #quickSort(arr, 0, len(arr)-1)
-    introSort(arr, 0, len(arr), 2 * math.log(len(arr)))
+    def sort(self):
+        if self.choice == 1:
+            mergeSort(self.arr, 0, len(self.arr)-1)
+        elif self.choice == 2:
+            quickSort(self.arr, 0, len(self.arr)-1)
+        else:
+            introSort(self.arr, 0, len(self.arr), 2 * math.log(len(self.arr)))
 
     def print(self):
         print(f"Sorted arr = {self.arr}")
 
-
-obj1 = Sort(2)
-obj1.print()

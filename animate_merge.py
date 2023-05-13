@@ -1,3 +1,9 @@
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QSizePolicy
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import numpy as np
+
 import math
 
 
@@ -127,6 +133,9 @@ def merge(arr, left, mid, right):
     k = 0
 
     for i in range(left, right + 1):
+        # Update the plot after each merge operation
+        window.plot()
+        QApplication.processEvents()
         arr[i] = tempArr[k]
         k += 1
 
@@ -140,20 +149,75 @@ def mergeSort(arr, left, right):
 
 
 class Sort:
-    arr = [15, 45, 47, 1, 2, 5, 77, 6, 25, 333, -84, -4, -44]
     choice = None
 
-    def __init__(self, choice):
+    def __init__(self, arr: [], choice: int):
         self.choice = choice
+        self.arr = arr
 
-#    def sort(self):
-
-    if choice == 1:
-        mergeSort(arr, 0, len(arr)-1)
-    elif choice == 2:
-        quickSort(arr, 0, len(arr)-1)
-    else:
-        introSort(arr, 0, len(arr), 2 * math.log(len(arr)))
+    def sort(self):
+        if self.choice == 1:
+            mergeSort(self.arr, 0, len(self.arr)-1)
+        elif self.choice == 2:
+            quickSort(self.arr, 0, len(self.arr)-1)
+        else:
+            introSort(self.arr, 0, len(self.arr), 2 * math.log(len(self.arr)))
 
     def print(self):
         print(f"Sorted arr = {self.arr}")
+
+
+class BubbleSortWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        # Set up the window
+        self.setWindowTitle("Bubble Sort Animation")
+        self.setGeometry(100, 100, 800, 600)
+
+        # Create a Matplotlib figure and canvas widget
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.setCentralWidget(self.canvas)
+
+        # Set the size policy of the canvas widget to Expanding
+        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # Generate the data to sort
+        self.amount = 35
+        self.lst = np.random.randint(0, 100, self.amount)
+        self.x = np.arange(0, self.amount, 1)
+
+        # Set up the animation timer
+        self.timer = self.canvas.new_timer(interval=100, callbacks=[(self.animate, [], {})])
+
+        # Start the sorting algorithm
+        self.i = 0
+        self.j = 0
+        self.sort()
+
+    def sort(self):
+        #sort algorithm
+        self.n = len(self.lst)
+        self.timer.start()
+
+    def animate(self):
+        # Update the plot and wait for a short time
+        self.plot()
+        QApplication.processEvents()
+        mergeSort(self.lst, 0, self.n-1)
+        self.timer.stop()
+
+    def plot(self):
+        # Clear the previous plot and plot the current state of the list
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+        ax.bar(self.x, self.lst)
+        self.canvas.draw()
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = BubbleSortWindow()
+    window.show()
+    sys.exit(app.exec_())
