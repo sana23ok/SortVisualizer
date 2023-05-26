@@ -7,6 +7,10 @@ class Sort:
     def __init__(self, ui, data):
         self._arr = data
         self._ui = ui
+        self._comp=0
+        self._swaps=0
+        self._recursionDepth=0
+        self._maxDepth=0
         self._flag = True if len(self._arr) <= 300 else False
 
     def sort(self, left, right):
@@ -14,6 +18,13 @@ class Sort:
 
     def printArr(self):
         print(self._arr)
+
+    def getNumOfOperations(self):
+        return self._swaps, self._comp
+
+    def _swap(self, i, j):
+        self._arr[i], self._arr[j] = self._arr[j], self._arr[i]
+        self._swaps+=1
 
 
 class MergeSort(Sort):
@@ -162,4 +173,3 @@ class IntroSort(Sort):
             p = self.__partition(left, right)
             self.sort(left, p + 1)
             self.sort(p + 1, right)
-

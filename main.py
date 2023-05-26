@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel, QSpinBox, QLCDNum
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_template import FigureCanvas
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from sort import Sort, MergeSort, QuikSort, IntroSort
+from test1 import Sort, MergeSort, QuikSort, IntroSort
 from random import randint
 import FileCreator
 
@@ -23,26 +23,18 @@ def generate_array(a, b, size):
     i = 0
     while i != size:
         temp = randint(a, b)
-        if temp not in arr:
-            arr.append(temp)
-            i += 1
+        # if temp not in arr:
+        arr.append(temp)
+        i += 1
     return arr
 
 
 def show_info_messagebox():
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Information)
-
-    # setting message for Message Box
     msg.setText("Size of array is bigger than interval")
-
-    # setting Message box window title
     msg.setWindowTitle("Information")
-
-    # declaring buttons on Message Box
     msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-
-    # start the app
     retval = msg.exec_()
 
 
@@ -51,6 +43,61 @@ def fillScrollArea(area, arr):
     array_text = '\n'.join(arr)
     labelS = QLabel(array_text)
     area.setWidget(labelS)
+
+
+def setPl(obj):
+    obj.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
+    # Create a palette object
+    palette = QtGui.QPalette()
+    lcdColor = QtGui.QColor(65, 105, 225)
+    palette.setColor(QtGui.QPalette.WindowText, lcdColor)
+    obj.setPalette(palette)
+
+
+def settingsForSpinBox(obj, colour, min, max, val, name):
+    obj.setStyleSheet(colour)
+    obj.setMinimum(min)
+    obj.setMaximum(max)
+    obj.setProperty("value", val)
+    obj.setObjectName(name)
+
+
+def settingsForComboBox(obj, font, names, objName, style="color:rgb(0, 15, 0);\n"
+                                                         "color-back-ground:rgb(126, 255, 245);\n"
+                                                         ""):
+    obj.setFont(font)
+    obj.addItems(names)
+    obj.setStyleSheet(style)
+    obj.setObjectName(objName)
+
+
+def setLabel(obj, size, weight, name, style="color:rgb(0,0,0);"):
+    font = QtGui.QFont()
+    font.setPointSize(size)
+    # font.setBold(True)
+    # font.setItalic(True)
+    font.setWeight(weight)
+    obj.setFont(font)
+    obj.setStyleSheet(style)
+    obj.setObjectName(name)
+
+
+def setButton(obj, pointSize, name, style="QPushButton{\n"
+                                          "background-color:rgb(105, 133, 255);\n"
+                                          "border-style:outset;\n"
+                                          "border-with:2px;\n"
+                                          "border-radius:8px;\n"
+                                          "}\n"
+                                          "QPushButton:pressed{\n"
+                                          " background-color:rgb(85, 120, 250);\n"
+                                          "}\n"
+                                          ""):
+    font = QtGui.QFont()
+    font.setPointSize(pointSize)
+    obj.setFont(font)
+    obj.setMouseTracking(False)
+    obj.setStyleSheet(style)
+    obj.setObjectName(name)
 
 
 class Ui_MainWindow(object):
@@ -89,13 +136,13 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         # main window settings
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1020, 880)
+        MainWindow.resize(1400, 880)
         MainWindow.setMinimumSize(QtCore.QSize(60, 120))
         MainWindow.setBaseSize(QtCore.QSize(5, 5))
         MainWindow.setLayoutDirection(QtCore.Qt.RightToLeft)
         MainWindow.setStyleSheet("background-color:rgb(255, 255, 255)")
 
-        # cantral widget
+        # central widget
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.formLayoutWidget = QtWidgets.QWidget(self.centralwidget)
@@ -119,24 +166,18 @@ class Ui_MainWindow(object):
 
         # setting for comboBox
         self.comboBox = QtWidgets.QComboBox(self.formLayoutWidget)
-        self.comboBox.setFont(self.font)
-        self.comboBox.addItems(self.algoNamesList)
-        self.comboBox.setStyleSheet("color:rgb(0, 15, 0);\n"
-                                    "color-back-ground:rgb(126, 255, 245);\n"
-                                    "")
-        self.comboBox.setObjectName("comboBox")
-        self.comboBox.currentIndexChanged.connect(lambda: self.comboBoxChanged(self.comboBox.currentText()))
+        settingsForComboBox(self.comboBox, self.font, self.algoNamesList, "comboBox")
         # connect combo box with action
+        self.comboBox.currentIndexChanged.connect(lambda: self.comboBoxChanged(self.comboBox.currentText()))
 
         self.gridLayout.addWidget(self.comboBox, 10, 0, 1, 1)
+
+        # налаштування кожного надпису, кнопки і тд в окремих ф-ціях
+
         # spin box to get size of array
         self.spinBox_Size = QtWidgets.QSpinBox(self.formLayoutWidget)
-        self.spinBox_Size.setStyleSheet("color:rgb(0, 0, 0);")
-        self.spinBox_Size.setMinimum(20)  # set minimum 100
-        self.spinBox_Size.setMaximum(50000)
-        self.spinBox_Size.setProperty("value", 20)  # set  100
-        self.spinBox_Size.setObjectName("spinBox_Size")
-        # get value of size from spin box
+        # settingsForSpinBox(obj, colour, min, max, val, name):
+        settingsForSpinBox(self.spinBox_Size, "color:rgb(0, 0, 0);", 10, 50000, 10, "spinBox_Size")
 
         self.gridLayout.addWidget(self.spinBox_Size, 0, 0, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
@@ -144,11 +185,7 @@ class Ui_MainWindow(object):
 
         # spin box to get value of first element
         self.spinBox_limitA = QtWidgets.QSpinBox(self.formLayoutWidget)
-        self.spinBox_limitA.setStyleSheet("color:rgb(0, 0, 0);")
-        self.spinBox_limitA.setMinimum(0)
-        self.spinBox_limitA.setMaximum(50000)
-        self.spinBox_limitA.setProperty("value", 0)
-        self.spinBox_limitA.setObjectName("spinBox_limitA")
+        settingsForSpinBox(self.spinBox_limitA, "color:rgb(0, 0, 0);", 0, 50000, 0, "spinBox_limitA")
         # coonect with event
 
         self.gridLayout.addWidget(self.spinBox_limitA, 3, 0, 1, 1)
@@ -157,71 +194,32 @@ class Ui_MainWindow(object):
 
         # spin box to get value of last element
         self.spinBox_limitB = QtWidgets.QSpinBox(self.formLayoutWidget)
-        self.spinBox_limitB.setStyleSheet("color:rgb(0, 0, 0);")
-        self.spinBox_limitB.setMinimum(100)
-        self.spinBox_limitB.setMaximum(50000)
-        self.spinBox_limitB.setProperty("value", 0)
-        self.spinBox_limitB.setObjectName("spinBox_limitB")
-
+        settingsForSpinBox(self.spinBox_limitB, "color:rgb(0, 0, 0);", 100, 50000, 100, "spinBox_limitB")
         self.gridLayout.addWidget(self.spinBox_limitB, 6, 0, 1, 1)
+
+        # labels and settings for them
+        # label for size of array
         self.labelSize = QtWidgets.QLabel(self.formLayoutWidget)
-
-        # labels
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(False)
-        font.setItalic(False)
-        font.setWeight(50)
-        self.labelSize.setFont(font)
-        self.labelSize.setStyleSheet("color:rgb(0,0,0);")
-        self.labelSize.setObjectName("labelSize")
+        setLabel(self.labelSize, 10, 50, "labelSize")
         self.gridLayout.addWidget(self.labelSize, 0, 1, 1, 1)
-
+        # label for 1st element in array
         self.labelBorderA = QtWidgets.QLabel(self.formLayoutWidget)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(False)
-        font.setItalic(False)
-        font.setWeight(50)
-        self.labelBorderA.setFont(font)
-        self.labelBorderA.setStyleSheet("color:rgb(0,0,0);")
-        self.labelBorderA.setObjectName("labelBorderA")
+        setLabel(self.labelBorderA, 10, 50, "labelBorderA ")
         self.gridLayout.addWidget(self.labelBorderA, 3, 1, 1, 1)
-
+        # label for last element in array
         self.labelBorderB = QtWidgets.QLabel(self.formLayoutWidget)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(False)
-        font.setItalic(False)
-        font.setWeight(50)
-        self.labelBorderB.setFont(font)
-        self.labelBorderB.setStyleSheet("color:rgb(0,0,0);")
-        self.labelBorderB.setObjectName("labelBorderB")
+        setLabel(self.labelBorderB, 10, 50, "labelBorderB")
         self.gridLayout.addWidget(self.labelBorderB, 6, 1, 1, 1)
 
         spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.gridLayout.addItem(spacerItem2, 8, 0, 1, 1)
-
+        # label for name of algo
         self.AlgoLabel = QtWidgets.QLabel(self.formLayoutWidget)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(False)
-        font.setItalic(False)
-        font.setWeight(50)
-        self.AlgoLabel.setFont(font)
-        self.AlgoLabel.setStyleSheet("color:rgb(0,0,0);")
-        self.AlgoLabel.setObjectName("AlgoLabel")
+        setLabel(self.AlgoLabel, 10, 50, "AlgoLabel")
         self.gridLayout.addWidget(self.AlgoLabel, 10, 1, 1, 1)
-
+        # label speed slider
         self.SpeedLabel = QtWidgets.QLabel(self.formLayoutWidget)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(False)
-        font.setItalic(False)
-        font.setWeight(50)
-        self.SpeedLabel.setFont(font)
-        self.SpeedLabel.setStyleSheet("color:rgb(0,0,0);")
-        self.SpeedLabel.setObjectName("SpeedBtn")
+        setLabel(self.SpeedLabel, 10, 50, "SpeedLabel")
         self.gridLayout.addWidget(self.SpeedLabel, 12, 1, 1, 1)
 
         spacerItem3 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
@@ -229,7 +227,7 @@ class Ui_MainWindow(object):
 
         self.PlotFrame = QtWidgets.QFrame(self.centralwidget)
         # self.PlotFrame.setGeometry(QtCore.QRect(400, 10, 571, 451))
-        self.PlotFrame.setGeometry(QtCore.QRect(400, 10, 650, 480))
+        self.PlotFrame.setGeometry(QtCore.QRect(400, 10, 900, 480))
         self.PlotFrame.setObjectName("PlotFrame")
         # embed graph
         # frame where pyPlot is going to be located
@@ -237,10 +235,22 @@ class Ui_MainWindow(object):
         self.horizontalLayout = QtWidgets.QVBoxLayout(self.PlotFrame)
         self.horizontalLayout.setObjectName("horizontalLayout")
         # Canvas here
-        self.figure = plt.figure()
+        # Create a Figure object and adjust its size
+        # self.figure = plt.figure(figsize=(12, 8))  # Adjust the width and height as needed
+        # self.figure = plt.figure()
+
+        # self.figure = plt.figure()
+        # self.canvas = FigureCanvas(self.figure)
+        # self.canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        # self.canvas.updateGeometry()
+
+        self.figure = plt.figure(figsize=(12, 8))
+        self.canvas = FigureCanvas(self.figure)
+        self.canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.canvas.updateGeometry()
         self.canvas = FigureCanvas(self.figure)
         # Add canvas | End canvas
-        self.horizontalLayout.addChildWidget(self.canvas)
+        # self.horizontalLayout.addChildWidget(self.canvas)
         # create vertical layout
         self.verticalLayout = QtWidgets.QVBoxLayout(self.PlotFrame)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -250,6 +260,8 @@ class Ui_MainWindow(object):
         # end of Canvas
         # ==========Add Canvas==============
         self.horizontalLayout.addWidget(self.canvas)
+        self.horizontalLayout.setStretch(0, 1)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         # end of horizontal layout
 
         # scroll area
@@ -257,12 +269,12 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
 
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 547, 427))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        # self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        # self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 547, 427))
+        # self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        # self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
-        self.verticalLayout.addWidget(self.scrollArea)
+        # self.verticalLayout.addWidget(self.scrollArea)
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
         self.verticalLayoutWidget.setGeometry(QtCore.QRect(770, 670, 191, 107))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
@@ -270,14 +282,10 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
 
-        self.label = QtWidgets.QLabel(self.verticalLayoutWidget)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.label.setFont(font)
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.label.setObjectName("label")
+        self.labelSave = QtWidgets.QLabel(self.verticalLayoutWidget)
+        setLabel(self.labelSave, 10, 50, "labelSave")
 
-        self.verticalLayout_2.addWidget(self.label)
+        self.verticalLayout_2.addWidget(self.labelSave)
         spacerItem4 = QtWidgets.QSpacerItem(10, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
         self.verticalLayout_2.addItem(spacerItem4)
 
@@ -292,42 +300,13 @@ class Ui_MainWindow(object):
         # connect button with event
         self.StartBtn = QtWidgets.QPushButton(self.centralwidget, clicked=lambda: self.plotOnCanvas())
         self.StartBtn.setGeometry(QtCore.QRect(120, 420, 190, 30))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.StartBtn.setFont(font)
-        self.StartBtn.setMouseTracking(False)
-        self.StartBtn.setStyleSheet("QPushButton{\n"
-                                    "background-color:rgb(105, 133, 255);\n"
-                                    "border-style:outset;\n"
-                                    "border-with:2px;\n"
-                                    "border-radius:8px;\n"
-                                    "}\n"
-                                    "QPushButton:pressed{\n"
-                                    " background-color:rgb(85, 120, 250);\n"
-                                    "}\n"
-                                    "")
-        self.StartBtn.setObjectName("StartBtn")
+        setButton(self.StartBtn, 10, "StartBtn")
 
         # connect button with event
         self.SaveBtn = QtWidgets.QPushButton(self.centralwidget, clicked=lambda: self.save())
         self.SaveBtn.setEnabled(True)
         self.SaveBtn.setGeometry(QtCore.QRect(770, 790, 190, 30))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.SaveBtn.setFont(font)
-        self.SaveBtn.setMouseTracking(False)
-        self.SaveBtn.setStyleSheet("QPushButton{\n"
-                                   "background-color:rgb(105, 133, 255);\n"
-                                   "border-style:outset;\n"
-                                   "border-with:2px;\n"
-                                   "border-radius:8px;\n"
-                                   "}\n"
-                                   "QPushButton:pressed{\n"
-                                   " background-color:rgb(85, 120, 250);\n"
-                                   "}\n"
-                                   "")
-        self.SaveBtn.setObjectName("SaveBtn")
-        # connect save button with action
+        setButton(self.SaveBtn, 10, "StartBtn")
 
         self.formLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
         self.formLayoutWidget_2.setGeometry(QtCore.QRect(40, 490, 701, 350))
@@ -350,17 +329,13 @@ class Ui_MainWindow(object):
         # display sorted array in scroll area
 
         self.gridLayout_2.addWidget(self.scrollAreaS, 1, 0, 1, 1)
+
         self.UnordArrLabel = QtWidgets.QLabel(self.formLayoutWidget_2)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.UnordArrLabel.setFont(font)
-        self.UnordArrLabel.setObjectName("UnordArrLabel")
+        setLabel(self.UnordArrLabel, 10, 50, "UnordArrLabel")
         self.gridLayout_2.addWidget(self.UnordArrLabel, 0, 2, 1, 1)
+
         self.SortArrayLabel = QtWidgets.QLabel(self.formLayoutWidget_2)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.SortArrayLabel.setFont(font)
-        self.SortArrayLabel.setObjectName("SortArrayLabel")
+        setLabel(self.SortArrayLabel, 10, 50, "SortArrayLabel")
         self.gridLayout_2.addWidget(self.SortArrayLabel, 0, 0, 1, 1)
 
         # scroll area for unsorted
@@ -381,30 +356,32 @@ class Ui_MainWindow(object):
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
-        self.label_2 = QtWidgets.QLabel(self.verticalLayoutWidget_2)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.label_2.setFont(font)
-        self.label_2.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.label_2.setObjectName("label_2")
-        self.verticalLayout_3.addWidget(self.label_2)
 
+        self.labelComp = QtWidgets.QLabel(self.verticalLayoutWidget_2)
+        setLabel(self.labelComp, 10, 50, "labelComp")
+        self.labelComp.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.verticalLayout_3.addWidget(self.labelComp)
         # LCD for comparisons
         self.comp = QtWidgets.QLCDNumber(self.verticalLayoutWidget_2)
         self.comp.setObjectName("comp")
+        self.comp.setDigitCount(8)
+        # Set the color palette of the LCD numbers
+        setPl(self.comp)
+
         self.verticalLayout_3.addWidget(self.comp)
         spacerItem7 = QtWidgets.QSpacerItem(10, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
         self.verticalLayout_3.addItem(spacerItem7)
-        self.label_3 = QtWidgets.QLabel(self.verticalLayoutWidget_2)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.label_3.setFont(font)
-        self.label_3.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.label_3.setObjectName("label_3")
-        self.verticalLayout_3.addWidget(self.label_3)
+
+        self.labelSwaps = QtWidgets.QLabel(self.verticalLayoutWidget_2)
+        setLabel(self.labelSwaps, 10, 50, "labelSwaps ")
+
+        self.labelSwaps.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.verticalLayout_3.addWidget(self.labelSwaps)
         # LCD for swaps
         self.swap = QtWidgets.QLCDNumber(self.verticalLayoutWidget_2)
         self.swap.setObjectName("swap")
+        self.swap.setDigitCount(8)
+        setPl(self.swap)
         self.verticalLayout_3.addWidget(self.swap)
 
         MainWindow.setCentralWidget(self.centralwidget)
@@ -423,15 +400,15 @@ class Ui_MainWindow(object):
         self.labelBorderB.setText(_translate("MainWindow", "Last element"))
         self.AlgoLabel.setText(_translate("MainWindow", "Algorithm"))
         self.SpeedLabel.setText(_translate("MainWindow", "Speed"))
-        self.label.setText(_translate("MainWindow", "Enter name of file to\n"
-                                                    "save sorted array"))
+        self.labelSave.setText(_translate("MainWindow", "Enter name of file to\n"
+                                                        "save sorted array"))
         self.StartBtn.setText(_translate("MainWindow", "Sort"))
         self.SaveBtn.setText(_translate("MainWindow", "Save"))
         self.UnordArrLabel.setText(_translate("MainWindow", "Unsorted array"))
         self.SortArrayLabel.setText(_translate("MainWindow", "Sorted array"))
-        self.label_2.setText(_translate("MainWindow", "Number of\n"
-                                                      "comparisons:"))
-        self.label_3.setText(_translate("MainWindow", "swaps:"))
+        self.labelComp.setText(_translate("MainWindow", "Number of\n"
+                                                        "comparisons:"))
+        self.labelSwaps.setText(_translate("MainWindow", "swaps:"))
 
     def updateSliderValue(self, value):
         self.sortingTime = value
@@ -446,10 +423,8 @@ class Ui_MainWindow(object):
 
     def plotOnCanvas(self):
         self.n = self.spinBox_Size.value()
-        # Generate the data to sort
         self.amount = self.spinBox_Size.value()
-
-        # self.lst = np.random.randint(self.spinBox_limitA.value(), self.spinBox_limitB.value(), self.n)
+        # Generate the data to sort
         self.lst = generate_array(self.spinBox_limitA.value(), self.spinBox_limitB.value(), self.n)
         self.x = np.arange(0, self.n, 1)
         fillScrollArea(self.scrollAreaUS, FileCreator.convert(self.lst))
@@ -464,7 +439,11 @@ class Ui_MainWindow(object):
 
     def animate(self):
         # Update the plot and wait for a short time
-        self.plot(0)
+        if len(self.lst) <= 300:
+            self.plot(0)
+        else:
+            self.plot_diabled()
+
         QApplication.processEvents()
         algorithm_classes = {
             self.algoNamesList[0]: MergeSort,
@@ -478,13 +457,27 @@ class Ui_MainWindow(object):
         if not self.saveFlag:
             FileCreator.saveInTxtFile(self.lst, "output")
         SORT.printArr()
-        ui.plot(0)
+        x, y, z, v = SORT.getNumOfOperations()
+        print("Number of swaps:", x)
+        print("Number of comparisons:", y)
+        print("Recursion depth:", z)
+        print("Max depth:", v)
+        # new_value = self.comp.intValue() + 455
+        # self.comp.display(new_value)
+        if len(self.lst) <= 300:
+            ui.plot(0)
         self.timer.stop()
+
+    def updateCounters(self, swaps=0, comp=0, recDepth=0, maxDepth=0):
+        self.swap.display(self.swap.intValue() + swaps)
+        self.comp.display(self.comp.intValue() + comp)
 
     def plot(self, highlighted_index):
         # Clear the previous plot and plot the current state of the list
         self.figure.clear()
         ax = self.figure.add_subplot(111)
+        self.figure.set_figwidth(10)  # Adjust the width as desired
+        self.figure.set_figheight(6)  # Adjust the height as desired
         # Plot the bars with the desired color
         colors = ['royalblue'] * self.n  # default color
         # Set the color of the specific bar to highlight
@@ -505,6 +498,41 @@ class Ui_MainWindow(object):
         # Adjust the layout to make space for the legend under the plot
         plt.subplots_adjust(bottom=0.4)  # Increase the bottom margin to accommodate the legend
         self.canvas.draw()
+
+    def plot_diabled(self):
+        # Clear the previous plot and plot the current state of the list
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+        self.figure.set_figwidth(10)  # Adjust the width as desired
+        self.figure.set_figheight(6)  # Adjust the height as desired
+
+        # Plot the bars with the desired color
+        colors = ['lightgray'] * self.n  # Default color
+
+        # Set the color of the specific bar to highlight
+        # Plot the bars with the colors
+        ax.bar(self.x, self.lst, color=colors)
+
+        # Remove unnecessary elements
+        ax.spines['top'].set_visible(False)  # Remove top border
+        ax.spines['right'].set_visible(False)  # Remove right border
+        ax.spines['left'].set_visible(False)  # Remove left border
+        ax.spines['bottom'].set_visible(False)  # Remove bottom border
+        ax.tick_params(axis='both', which='both', length=0, labelsize=0)  # Remove ticks on the axes
+
+        # Add a legend for the marked element and sorting disabled
+        legend_labels = ['Animation is disabled if array > 300']
+        legend_handles = [plt.Rectangle((0, 0), 1, 1, color='lightgray')]
+
+        ax.legend(legend_handles, legend_labels, loc='lower right',
+                  ncol=2)  # Place the legend under the plot, with 2 columns
+
+        # Adjust the layout to make space for the legend under the plot
+        plt.subplots_adjust(bottom=0.4)  # Increase the bottom margin to accommodate the legend
+
+        self.canvas.draw()
+
+
 
 
 if __name__ == "__main__":
