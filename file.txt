@@ -1,0 +1,8 @@
+Unsorted array:
+3, 2, 9, 3, 5, 11, 12, 10, 4, 19, 2, 5, 12, 0, 18, 4, 19, 3, 6, 15
+Sorted array:
+0, 2, 2, 3, 3, 3, 4, 4, 5, 5, 6, 9, 10, 11, 12, 12, 15, 18, 19, 19
+Number of swaps: 88
+Number of comparisons: 64
+Recursion depth: 0
+Max depth: 6

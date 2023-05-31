@@ -1,5 +1,7 @@
-# -*- coding: utf-8 -*-
+import os
+import shutil
 import sys
+import time
 
 import numpy as np
 # Form implementation generated from reading ui file 'gui.ui'
@@ -30,15 +32,6 @@ def generate_array(a, b, size):
     return arr
 
 
-# def show_info_messagebox():
-#     msg = QMessageBox()
-#     msg.setIcon(QMessageBox.Information)
-#     msg.setText("Size of array is bigger than interval")
-#     msg.setWindowTitle("Information")
-#     msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-#     retval = msg.exec_()
-
-
 def fillScrollArea(area, arr):
     # display unsorted array
     array_text = '\n'.join(arr)
@@ -60,7 +53,7 @@ def setPl(obj):
     obj.setPalette(palette)
 
 
-def settingsForSpinBox(obj, color, min, max, val, name):
+def settingsForSpinBox(obj, min, max, val, name):
     style = "QSpinBox {"
     style += "background-color: rgb(201,217,235);"
     style += "color: black;"
@@ -74,8 +67,8 @@ def settingsForSpinBox(obj, color, min, max, val, name):
     style += "}"
 
     style += "QSpinBox::up-button, QSpinBox::down-button {"
-    style += "width: 18px;"  # Set the desired width for the buttons
-    style += "height: 18px;"  # Set the desired height for the buttons
+    style += "width: 18px;"  # width for the buttons
+    style += "height: 18px;"  # height
     style += "}"
 
     obj.setStyleSheet(style)
@@ -127,6 +120,7 @@ def setButton(obj, pointSize, name, style="QPushButton{\n"
                                           " background-color:rgb(85, 120, 250);\n"
                                           "}\n"
                                           ""):
+
     font = QtGui.QFont()
     font.setPointSize(pointSize)
     obj.setFont(font)
@@ -146,6 +140,7 @@ def setLineEdit(nameField, font, name, param1):
 class Ui_MainWindow(object):
 
     def __init__(self):
+        self.flagStop = False
         self.GenerationBtn = None
         self.generationFlag = False
         self.mapped_value = 0.0025
@@ -214,13 +209,14 @@ class Ui_MainWindow(object):
         self.horizontalSlider = QtWidgets.QSlider(self.formLayoutWidget)
         self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider.setObjectName("horizontalSlider")
-        self.horizontalSlider.setMinimum(1)
-        self.horizontalSlider.setMaximum(500000)
-        self.horizontalSlider.setTickInterval(100)  # Set the tick interval
-        self.horizontalSlider.setSingleStep(100)  # Set the step size
-        self.horizontalSlider.setProperty("value", 250000)
+        self.horizontalSlider.setMinimum(1)  # Set the minimum value to 1
+        self.horizontalSlider.setMaximum(1000000)
+        self.horizontalSlider.setSingleStep(1000)  # Set the step size to 1
+        # Optional: Set the default value to a specific position within the range
+        self.horizontalSlider.setValue(500000)
+        self.horizontalSlider.setProperty("value", 500000)
         # Connect the valueChanged signal to the updateSliderValue slot
-        self.horizontalSlider.valueChanged.connect(lambda: self.updateSliderValue(self.horizontalSlider.value()))
+        # self.horizontalSlider.valueChanged.connect(lambda: self.updateSliderValue(self.horizontalSlider.value()))
         self.gridLayout.addWidget(self.horizontalSlider, 12, 0, 1, 1)
 
         # setting for comboBox
@@ -234,8 +230,8 @@ class Ui_MainWindow(object):
         # налаштування кожного надпису, кнопки і тд в окремих ф-ціях
         # spin box to get size of array
         self.spinBox_Size = QtWidgets.QSpinBox(self.formLayoutWidget)
-        # settingsForSpinBox(obj, colour, min, max, val, name):
-        settingsForSpinBox(self.spinBox_Size, "color:rgb(0, 0, 0);", 10, 50000, 50, "spinBox_Size")
+        # settingsForSpinBox(obj, min, max, val, name):
+        settingsForSpinBox(self.spinBox_Size, 10, 50000, 100, "spinBox_Size")
 
         self.gridLayout.addWidget(self.spinBox_Size, 0, 0, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
@@ -243,14 +239,15 @@ class Ui_MainWindow(object):
 
         # spin box to get value of first element
         self.spinBox_limitA = QtWidgets.QSpinBox(self.formLayoutWidget)
-        settingsForSpinBox(self.spinBox_limitA, "color:rgb(0, 0, 0);", 0, 50000, 0, "spinBox_limitA")
-        # connect with event
+        settingsForSpinBox(self.spinBox_limitA, 0, 1999900, 0, "spinBox_limitA")
+
         self.gridLayout.addWidget(self.spinBox_limitA, 3, 0, 1, 1)
         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.gridLayout.addItem(spacerItem1, 2, 0, 1, 1)
+
         # spin box to get value of last element
         self.spinBox_limitB = QtWidgets.QSpinBox(self.formLayoutWidget)
-        settingsForSpinBox(self.spinBox_limitB, "color:rgb(0, 0, 0);", 100, 50000, 100, "spinBox_limitB")
+        settingsForSpinBox(self.spinBox_limitB, 100, 2000000, 100, "spinBox_limitB")
         self.gridLayout.addWidget(self.spinBox_limitB, 6, 0, 1, 1)
         # labels and settings for them
         # label for size of array
@@ -314,11 +311,10 @@ class Ui_MainWindow(object):
         self.GenerationBtn.setGeometry(QtCore.QRect(50, 410, 101, 31))
         setButton(self.GenerationBtn, 10, "GenerationBtn")
 
-        self.StopBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.StopBtn = QtWidgets.QPushButton(self.centralwidget, clicked=lambda: self.setStopFlag())
         self.StopBtn.setGeometry(QtCore.QRect(270, 410, 101, 31))
         setButton(self.StopBtn, 10, "StopBtn")
 
-        # connect button with event
         self.SaveBtn = QtWidgets.QPushButton(self.centralwidget, clicked=lambda: self.save())
         self.SaveBtn.setEnabled(True)
         self.SaveBtn.setGeometry(QtCore.QRect(1000, 712, 195, 35))
@@ -368,79 +364,83 @@ class Ui_MainWindow(object):
 
         self.scrollAreaUS.setWidget(self.scrollAreaWidgetContents_2)
         self.gridLayoutScroll.addWidget(self.scrollAreaUS, 1, 2, 1, 1)
-        self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(770, 490, 190, 255))
-        self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
-        self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
-        self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.verticalLayoutWidgetCounters = QtWidgets.QWidget(self.centralwidget)
+        self.verticalLayoutWidgetCounters.setGeometry(QtCore.QRect(770, 490, 190, 255))
+        self.verticalLayoutWidgetCounters.setObjectName("verticalLayoutWidget_2")
+        self.LayoutOperationsLeft = QtWidgets.QVBoxLayout(self.verticalLayoutWidgetCounters)
+        self.LayoutOperationsLeft.setContentsMargins(0, 0, 0, 0)
+        self.LayoutOperationsLeft.setObjectName("verticalLayout_3")
 
-        self.labelComp = QtWidgets.QLabel(self.verticalLayoutWidget_2)
+        self.labelComp = QtWidgets.QLabel(self.verticalLayoutWidgetCounters)
         setLabel(self.labelComp, 10, 20, "labelComp")
         self.labelComp.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.verticalLayout_3.addWidget(self.labelComp)
+        self.LayoutOperationsLeft.addWidget(self.labelComp)
 
-        self.lcdComp = QtWidgets.QLCDNumber(self.verticalLayoutWidget_2)
+        self.lcdComp = QtWidgets.QLCDNumber(self.verticalLayoutWidgetCounters)
         self.lcdComp.setObjectName("lcdNumber")
-        self.verticalLayout_3.addWidget(self.lcdComp)
+        self.lcdComp.setDigitCount(10)
+        self.LayoutOperationsLeft.addWidget(self.lcdComp)
         setPl(self.lcdComp)
 
         spacerItem5 = QtWidgets.QSpacerItem(10, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
-        self.verticalLayout_3.addItem(spacerItem5)
+        self.LayoutOperationsLeft.addItem(spacerItem5)
 
-        self.labelSwap = QtWidgets.QLabel(self.verticalLayoutWidget_2)
+        self.labelSwap = QtWidgets.QLabel(self.verticalLayoutWidgetCounters)
         setLabel(self.labelSwap, 10, 20, "labelSwap")
         self.labelSwap.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.verticalLayout_3.addWidget(self.labelSwap)
+        self.LayoutOperationsLeft.addWidget(self.labelSwap)
 
-        self.lcdSwap= QtWidgets.QLCDNumber(self.verticalLayoutWidget_2)
+        self.lcdSwap= QtWidgets.QLCDNumber(self.verticalLayoutWidgetCounters)
         self.lcdSwap.setObjectName("lcdSwap")
-        self.verticalLayout_3.addWidget(self.lcdSwap)
+        self.lcdSwap.setDigitCount(10)
+        self.LayoutOperationsLeft.addWidget(self.lcdSwap)
         setPl(self.lcdSwap)
 
         spacerItem6 = QtWidgets.QSpacerItem(10, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
-        self.verticalLayout_3.addItem(spacerItem6)
+        self.LayoutOperationsLeft.addItem(spacerItem6)
 
-        self.labelFile = QtWidgets.QLabel(self.verticalLayoutWidget_2)
+        self.labelFile = QtWidgets.QLabel(self.verticalLayoutWidgetCounters)
         setLabel(self.labelFile, 10, 20, "labelFile")
         self.labelFile.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.verticalLayout_3.addWidget(self.labelFile)
+        self.LayoutOperationsLeft.addWidget(self.labelFile)
 
-        self.nameField = QtWidgets.QLineEdit(self.verticalLayoutWidget_2)
+        self.nameField = QtWidgets.QLineEdit(self.verticalLayoutWidgetCounters)
         self.nameField.setObjectName("nameField")
         self.nameField.setStyleSheet("background-color: rgb(201,217,235)")
         self.nameField.setFixedHeight(35)
-        self.verticalLayout_3.addWidget(self.nameField)
+        self.LayoutOperationsLeft.addWidget(self.nameField)
 
-        self.verticalLayoutWidget_3 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(1000, 490, 190, 163))
-        self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
+        self.verticalLayoutWidgetCountersRight = QtWidgets.QWidget(self.centralwidget)
+        self.verticalLayoutWidgetCountersRight.setGeometry(QtCore.QRect(1000, 490, 190, 163))
+        self.verticalLayoutWidgetCountersRight.setObjectName("verticalLayoutWidget_3")
 
-        self.verticalLayout_4 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_3)
-        self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout_4.setObjectName("verticalLayout_4")
+        self.LayoutOperationsRight = QtWidgets.QVBoxLayout(self.verticalLayoutWidgetCountersRight)
+        self.LayoutOperationsRight.setContentsMargins(0, 0, 0, 0)
+        self.LayoutOperationsRight.setObjectName("verticalLayout_4")
 
-        self.labelRecursion = QtWidgets.QLabel(self.verticalLayoutWidget_3)
+        self.labelRecursion = QtWidgets.QLabel(self.verticalLayoutWidgetCountersRight)
         setLabel(self.labelRecursion, 10, 20, "labelRecursion")
         self.labelRecursion.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.verticalLayout_4.addWidget(self.labelRecursion)
+        self.LayoutOperationsRight.addWidget(self.labelRecursion)
 
-        self.lcdRec = QtWidgets.QLCDNumber(self.verticalLayoutWidget_3)
+        self.lcdRec = QtWidgets.QLCDNumber(self.verticalLayoutWidgetCountersRight)
         self.lcdRec.setObjectName("lcdRec")
-        self.verticalLayout_4.addWidget(self.lcdRec)
+        self.lcdRec.setDigitCount(10)
+        self.LayoutOperationsRight.addWidget(self.lcdRec)
         setPl(self.lcdRec)
 
         spacerItem7 = QtWidgets.QSpacerItem(10, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
-        self.verticalLayout_4.addItem(spacerItem7)
+        self.LayoutOperationsRight.addItem(spacerItem7)
 
-        self.labelMaxDepth = QtWidgets.QLabel(self.verticalLayoutWidget_3)
+        self.labelMaxDepth = QtWidgets.QLabel(self.verticalLayoutWidgetCountersRight)
         setLabel(self.labelMaxDepth, 10, 20, "labelMaxDepth")
         self.labelMaxDepth.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.verticalLayout_4.addWidget(self.labelMaxDepth)
+        self.LayoutOperationsRight.addWidget(self.labelMaxDepth)
 
-        self.lcdMaxD = QtWidgets.QLCDNumber(self.verticalLayoutWidget_3)
+        self.lcdMaxD = QtWidgets.QLCDNumber(self.verticalLayoutWidgetCountersRight)
         self.lcdMaxD.setObjectName("lcdMaxD")
-        self.verticalLayout_4.addWidget(self.lcdMaxD)
+        self.lcdMaxD.setDigitCount(10)
+        self.LayoutOperationsRight.addWidget(self.lcdMaxD)
         setPl(self.lcdMaxD)
 
         MainWindow.setCentralWidget(self.centralwidget)
@@ -453,7 +453,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Sort visualizer"))
         self.labelSize.setText(_translate("MainWindow", "Size of array"))
         self.labelBorderA.setText(_translate("MainWindow", "First element"))
         self.labelBorderB.setText(_translate("MainWindow", "Last element"))
@@ -472,30 +472,46 @@ class Ui_MainWindow(object):
         self.labelMaxDepth.setText(_translate("MainWindow", "Max depht:"))
         self.GenerationBtn.setText(_translate("MainWindow", "Generate"))
 
-    def updateSliderValue(self, value):
-        self.sortingTime = 10
-        self.mapped_value = value / 10000000
+    def ani_time(self):
+        # Determine sort wait time scaled to bars amount
+        ani_interval = self.horizontalSlider.value()/1000000000
+        return ani_interval
 
     def comboBoxChanged(self, name):
         self.choice = name
-        print(self.choice)
 
     def save(self):
-        self.saveFlag = True
-        FileCreator.saveInTxtFile(self.lst, "output")
+        if self.nameField.text():
+            new_filename = self.nameField.text()+".txt"
+            shutil.copy2("temp.txt", new_filename)
+
+    def setStopFlag(self):
+        self.flagStop=True
+
+    def checkInterval(self, n, a, b):
+        if n < b:
+            return a, b
+        elif b < a:
+            self.spinBox_limitB.setValue(a)  # Set b equal to a
+            return a, a + n
+        elif n > b - a:
+            self.spinBox_limitB.setValue(a + n)  # Set b equal to a + n
+            return a, a + n
+        elif b == 50000 and (b - a) < n:
+            self.spinBox_limitA.setValue(50000 - n)
+            return 50000 - n, b
+        else:
+            self.spinBox_limitB.setValue(b)
+            return a, b
 
     def generate(self):
+        self.updateCounters(0, 0, 0, 0)
         self.generationFlag = True
         self.n = self.spinBox_Size.value()
-        # self.amount = self.spinBox_Size.value()
         # Generate the data to sort
-        if self.spinBox_Size.value() > self.spinBox_limitB.value():
-            self.lst = generate_array(self.spinBox_limitA.value(), self.spinBox_Size.value(), self.n)
-            self.spinBox_limitB.setValue(self.spinBox_Size.value())
-        else:
-            self.lst = generate_array(self.spinBox_limitA.value(), self.spinBox_limitB.value(), self.n)
-
-        self.x = np.arange(0, self.n, 1)
+        a, b = self.checkInterval(self.n, self.spinBox_limitA.value(),self.spinBox_limitB.value())
+        self.lst = generate_array(a, b, self.n)
+        FileCreator.saveInTxtFile(self.lst, 'w')
         fillScrollArea(self.scrollAreaUS, FileCreator.convert(self.lst))
         ui.plot()
 
@@ -503,13 +519,14 @@ class Ui_MainWindow(object):
         if not self.generationFlag:
             self.generate()
         # Set up the animation timer
-        self.timer = self.canvas.new_timer(interval=self.sortingTime,
+        self.timer = self.canvas.new_timer(interval=100,
                                            callbacks=[(self.animate, [], {})])
         print(self.sortingTime)
         # Start the sorting algorithm
         self.processSorting()
 
     def processSorting(self):
+        # self.sortingTime = 10
         self.timer.start()
 
     def buttonsStatus(self, flag):
@@ -519,10 +536,10 @@ class Ui_MainWindow(object):
         self.SaveBtn.setDisabled(flag)
 
     def animate(self):
+        self.updateCounters(0, 0, 0, 0)
         self.buttonsStatus(True)
-        # Update the plot and wait for a short time
+        # Update the plot
         self.plot()
-
         QApplication.processEvents()
         algorithm_classes = {
             self.algoNamesList[0]: MergeSort,
@@ -534,36 +551,33 @@ class Ui_MainWindow(object):
         SORT.sort(0, self.n - 1)
         fillScrollArea(self.scrollAreaS, FileCreator.convert(self.lst))
         if not self.saveFlag:
-            FileCreator.saveInTxtFile(self.lst, "output")
-        SORT.printArr()
-        x, y, z, v = SORT.getNumOfOperations()
-        print("Number of swaps:", x)
-        print("Number of comparisons:", y)
-        print("Recursion depth:", z)
-        print("Max depth:", v)
-        # new_value = self.comp.intValue() + 455
-        # self.comp.display(new_value)
-        if len(self.lst) <= 300:
+            FileCreator.saveInTxtFile(self.lst, 'a')
+        # SORT.printArr()
+        x, y, z, v = SORT.NumOfOperations
+        # print("Number of swaps:", x)
+        # print("Number of comparisons:", y)
+        # print("Recursion depth:", z)
+        # print("Max depth:", v)
+        FileCreator.appendOperations(x, y, z, v)
+        if self.n <= 300:
             ui.plot()
         self.timer.stop()
         self.buttonsStatus(False)
         self.generationFlag=False
+        self.flagStop=False
 
     def updateCounters(self, swaps=0, comp=0, recDepth=0, maxDepth=0):
-        self.lcdSwap.display(self.lcdSwap.intValue() + swaps)
-        self.lcdComp.display(self.lcdComp.intValue() + comp)
-        self.lcdRec.display(self.lcdRec.intValue() + recDepth)
-        self.lcdMaxD.display(self.lcdMaxD.intValue() + maxDepth)
+        self.lcdSwap.display(swaps)
+        self.lcdComp.display(comp)
+        self.lcdRec.display(recDepth)
+        self.lcdMaxD.display(maxDepth)
 
     def plot(self, highlighted_index=0):
-        if highlighted_index==0:
-            highlighted_index = self.n-1
-        # Clear the previous plot and plot the current state of the list
+        # Clear the previous plot
         self.figure.clear()
+        time.sleep(self.ani_time())
+        # time.sleep(0.1) - time.sleep(0.00000001)
         ax = self.figure.add_subplot(111)
-        # Clear the previous figure and create a new one with adjusted size
-        # self.figure.set_figwidth(self.PlotFrame.width() / self.figure.get_dpi())
-        # self.figure.set_figheight(self.PlotFrame.height() / self.figure.get_dpi())
 
         # Plot the bars with the color
         if len(self.lst) > 300:
@@ -575,6 +589,7 @@ class Ui_MainWindow(object):
             colors[highlighted_index] = 'navy'
 
         ax.set_facecolor('white')
+        self.x = np.arange(0, self.n, 1)
         ax.bar(self.x[:min(self.n, 300)], self.lst[:min(self.n, 300)], color=colors, width=1)  # display only 100 bars
         # Remove unnecessary elements and change their color to white
         ax.spines['top'].set_visible(False)
@@ -587,7 +602,6 @@ class Ui_MainWindow(object):
         ax.spines['bottom'].set_color('white')
         ax.tick_params(axis='both', which='both', length=0, labelsize=0,
                        color='white')  # Remove ticks on the axes and set color to white
-
         # Add a legend for the marked element and sorting disabled
         if len(self.lst) > 300:
             legend_labels = ['Animation is disabled \nif array bigger than 300']
@@ -597,13 +611,10 @@ class Ui_MainWindow(object):
             legend_handles = [plt.Rectangle((0, 0), 1, 1, color='navy')]
 
         ax.legend(legend_handles, legend_labels, loc='lower right', ncol=2)
-
         # Adjust the layout to make space for the legend under the plot
         plt.subplots_adjust(left=0.02, right=1, bottom=0.02)
-
         # Redraw the canvas
         self.canvas.draw()
-        # plt.pause(self.mapped_value)
 
 
 if __name__ == "__main__":
@@ -612,4 +623,7 @@ if __name__ == "__main__":
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
+    FileCreator.deleteFile("temp.txt")
     sys.exit(app.exec_())
+
+

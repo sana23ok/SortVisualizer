@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+import os
+import shutil
 import sys
+import time
 
 import numpy as np
 # Form implementation generated from reading ui file 'gui.ui'
@@ -146,6 +149,7 @@ def setLineEdit(nameField, font, name, param1):
 class Ui_MainWindow(object):
 
     def __init__(self):
+        self.flagStop = False
         self.GenerationBtn = None
         self.generationFlag = False
         self.mapped_value = 0.0025
@@ -220,7 +224,7 @@ class Ui_MainWindow(object):
         self.horizontalSlider.setSingleStep(100)  # Set the step size
         self.horizontalSlider.setProperty("value", 250000)
         # Connect the valueChanged signal to the updateSliderValue slot
-        self.horizontalSlider.valueChanged.connect(lambda: self.updateSliderValue(self.horizontalSlider.value()))
+        # self.horizontalSlider.valueChanged.connect(lambda: self.updateSliderValue(self.horizontalSlider.value()))
         self.gridLayout.addWidget(self.horizontalSlider, 12, 0, 1, 1)
 
         # setting for comboBox
@@ -290,27 +294,15 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         # Canvas here
         # Create a Figure object and adjust its size
-        # bar_width = 0.8 / 300
-        # self.figure = plt.figure(figsize=(12, max(8, 300 * bar_width)))
-        array_size = 300  # Get the size of the array
-        # Calculate the figure size based on the array size
-        # figure_width = max(8, int(array_size * 0.03))  # Adjust the multiplication factor (0.03) as needed
-        # figure_height = max(6, int(array_size * 0.02))  # Adjust the multiplication factor (0.02) as needed
-        # self.figure = plt.figure(figsize=(figure_width, figure_height))
         self.figure = plt.figure(figsize=(8, 6))
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.canvas.updateGeometry()
         self.canvas = FigureCanvas(self.figure)
         # Add canvas | End canvas
-        # self.horizontalLayout.addChildWidget(self.canvas)
         # create vertical layout
         self.verticalLayout = QtWidgets.QVBoxLayout(self.PlotFrame)
         self.verticalLayout.setObjectName("verticalLayout")
-        # Canvas here
-        # self.figure = plt.figure()
-        # self.canvas = FigureCanvas(self.figure)
-        # end of Canvas
         # ==========Add Canvas==============
         self.horizontalLayout.addWidget(self.canvas)
         self.horizontalLayout.setStretch(0, 1)
@@ -326,7 +318,7 @@ class Ui_MainWindow(object):
         self.GenerationBtn.setGeometry(QtCore.QRect(50, 410, 101, 31))
         setButton(self.GenerationBtn, 10, "GenerationBtn")
 
-        self.StopBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.StopBtn = QtWidgets.QPushButton(self.centralwidget, clicked=lambda: self.setStopFlag())
         self.StopBtn.setGeometry(QtCore.QRect(270, 410, 101, 31))
         setButton(self.StopBtn, 10, "StopBtn")
 
@@ -356,6 +348,7 @@ class Ui_MainWindow(object):
         self.scrollAreaWidgetContents_3.setGeometry(QtCore.QRect(0, 0, 331, 318))
         self.scrollAreaWidgetContents_3.setObjectName("scrollAreaWidgetContents_3")
         self.scrollAreaS.setWidget(self.scrollAreaWidgetContents_3)
+
         # display sorted array in scroll area
         self.gridLayoutScroll.addWidget(self.scrollAreaS, 1, 0, 1, 1)
 
@@ -377,7 +370,6 @@ class Ui_MainWindow(object):
         self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 330, 318))
         self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
 
-        # display unsorted array
         self.scrollAreaUS.setWidget(self.scrollAreaWidgetContents_2)
         self.gridLayoutScroll.addWidget(self.scrollAreaUS, 1, 2, 1, 1)
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
@@ -418,10 +410,6 @@ class Ui_MainWindow(object):
         self.labelFile.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.verticalLayout_3.addWidget(self.labelFile)
 
-        # self.lcdTime = QtWidgets.QLCDNumber(self.verticalLayoutWidget_2)
-        # self.lcdTime.setObjectName("lcdTime")
-        # self.verticalLayout_3.addWidget(self.lcdTime)
-        # setPl(self.lcdTime)
         self.nameField = QtWidgets.QLineEdit(self.verticalLayoutWidget_2)
         self.nameField.setObjectName("nameField")
         self.nameField.setStyleSheet("background-color: rgb(201,217,235)")
@@ -475,15 +463,12 @@ class Ui_MainWindow(object):
         self.labelBorderB.setText(_translate("MainWindow", "Last element"))
         self.AlgoLabel.setText(_translate("MainWindow", "Algorithm"))
         self.SpeedLabel.setText(_translate("MainWindow", "Speed"))
-        # self.labelSave.setText(_translate("MainWindow", "Enter name of file to\n"
-        #                                                 "save sorted array"))
         self.StartBtn.setText(_translate("MainWindow", "Sort"))
         self.GenerationBtn.setText(_translate("MainWindow", "Generate"))
         self.StopBtn.setText(_translate("MainWindow", "Stop"))
         self.SaveBtn.setText(_translate("MainWindow", "Save"))
         self.UnordArrLabel.setText(_translate("MainWindow", "Unsorted array"))
         self.SortArrayLabel.setText(_translate("MainWindow", "Sorted array"))
-
         self.labelComp.setText(_translate("MainWindow", "Comparisons:"))
         self.labelSwap.setText(_translate("MainWindow", "Swaps:"))
         self.labelFile.setText(_translate("MainWindow", "Name of file:"))
@@ -491,30 +476,49 @@ class Ui_MainWindow(object):
         self.labelMaxDepth.setText(_translate("MainWindow", "Max depht:"))
         self.GenerationBtn.setText(_translate("MainWindow", "Generate"))
 
-    def updateSliderValue(self, value):
-        self.sortingTime = 10
-        self.mapped_value = value / 10000000
+    def ani_time(self):
+        # Determine sort wait time scaled to bars amount
+        ani_speed = self.horizontalSlider.value()
+
+        # Linear formula that determine the sleep time from the slider value
+        ani_interval = (-1 / 295) * ani_speed + 0.336
+        return ani_interval
 
     def comboBoxChanged(self, name):
         self.choice = name
         print(self.choice)
 
     def save(self):
-        self.saveFlag = True
-        FileCreator.saveInTxtFile(self.lst, "output")
+        if self.nameField.text():
+            new_filename = self.nameField.text()+".txt"
+            shutil.copy2("temp.txt", new_filename)
+
+    def setStopFlag(self):
+        self.flagStop=True
+
+    def checkInterval(self, n, a, b):
+        if n < b:
+            return a, n
+        elif b < a:
+            self.spinBox_limitB.setValue(a)  # Set b equal to a
+            return a, a + n
+        elif n > b - a:
+            self.spinBox_limitB.setValue(a + n)  # Set b equal to a + n
+            return a, a + n
+        elif b == 50000 and (b - a) < n:
+            self.spinBox_limitA.setValue(50000 - n)
+            return 50000 - n, b
+        else:
+            self.spinBox_limitB.setValue(b)
+            return a, b
 
     def generate(self):
         self.generationFlag = True
         self.n = self.spinBox_Size.value()
-        # self.amount = self.spinBox_Size.value()
         # Generate the data to sort
-        if self.spinBox_Size.value() > self.spinBox_limitB.value():
-            self.lst = generate_array(self.spinBox_limitA.value(), self.spinBox_Size.value(), self.n)
-            self.spinBox_limitB.setValue(self.spinBox_Size.value())
-        else:
-            self.lst = generate_array(self.spinBox_limitA.value(), self.spinBox_limitB.value(), self.n)
-
-        self.x = np.arange(0, self.n, 1)
+        a, b = self.checkInterval(self.n, self.spinBox_limitA.value(),self.spinBox_limitB.value())
+        self.lst = generate_array(a, b, self.n)
+        FileCreator.saveInTxtFile(self.lst, 'w')
         fillScrollArea(self.scrollAreaUS, FileCreator.convert(self.lst))
         ui.plot()
 
@@ -522,13 +526,14 @@ class Ui_MainWindow(object):
         if not self.generationFlag:
             self.generate()
         # Set up the animation timer
-        self.timer = self.canvas.new_timer(interval=self.sortingTime,
+        self.timer = self.canvas.new_timer(interval=100,
                                            callbacks=[(self.animate, [], {})])
         print(self.sortingTime)
         # Start the sorting algorithm
         self.processSorting()
 
     def processSorting(self):
+        self.sortingTime = 10
         self.timer.start()
 
     def buttonsStatus(self, flag):
@@ -541,7 +546,6 @@ class Ui_MainWindow(object):
         self.buttonsStatus(True)
         # Update the plot and wait for a short time
         self.plot()
-
         QApplication.processEvents()
         algorithm_classes = {
             self.algoNamesList[0]: MergeSort,
@@ -553,20 +557,20 @@ class Ui_MainWindow(object):
         SORT.sort(0, self.n - 1)
         fillScrollArea(self.scrollAreaS, FileCreator.convert(self.lst))
         if not self.saveFlag:
-            FileCreator.saveInTxtFile(self.lst, "output")
-        SORT.printArr()
-        x, y, z, v = SORT.getNumOfOperations()
-        print("Number of swaps:", x)
-        print("Number of comparisons:", y)
-        print("Recursion depth:", z)
-        print("Max depth:", v)
-        # new_value = self.comp.intValue() + 455
-        # self.comp.display(new_value)
-        if len(self.lst) <= 300:
+            FileCreator.saveInTxtFile(self.lst, 'a')
+        # SORT.printArr()
+        x, y, z, v = SORT.NumOfOperations
+        # print("Number of swaps:", x)
+        # print("Number of comparisons:", y)
+        # print("Recursion depth:", z)
+        # print("Max depth:", v)
+        FileCreator.appendOperations(x, y, z, v)
+        if self.n <= 300:
             ui.plot()
         self.timer.stop()
         self.buttonsStatus(False)
         self.generationFlag=False
+        self.flagStop=False
 
     def updateCounters(self, swaps=0, comp=0, recDepth=0, maxDepth=0):
         self.lcdSwap.display(self.lcdSwap.intValue() + swaps)
@@ -575,14 +579,12 @@ class Ui_MainWindow(object):
         self.lcdMaxD.display(self.lcdMaxD.intValue() + maxDepth)
 
     def plot(self, highlighted_index=0):
-        if highlighted_index==0:
-            highlighted_index = self.n-1
-        # Clear the previous plot and plot the current state of the list
+        # if highlighted_index==0:
+        #     highlighted_index = self.n-1
+        # Clear the previous plot
         self.figure.clear()
+        time.sleep(self.ani_time())
         ax = self.figure.add_subplot(111)
-        # Clear the previous figure and create a new one with adjusted size
-        # self.figure.set_figwidth(self.PlotFrame.width() / self.figure.get_dpi())
-        # self.figure.set_figheight(self.PlotFrame.height() / self.figure.get_dpi())
 
         # Plot the bars with the color
         if len(self.lst) > 300:
@@ -594,6 +596,7 @@ class Ui_MainWindow(object):
             colors[highlighted_index] = 'navy'
 
         ax.set_facecolor('white')
+        self.x = np.arange(0, self.n, 1)
         ax.bar(self.x[:min(self.n, 300)], self.lst[:min(self.n, 300)], color=colors, width=1)  # display only 100 bars
         # Remove unnecessary elements and change their color to white
         ax.spines['top'].set_visible(False)
@@ -606,7 +609,6 @@ class Ui_MainWindow(object):
         ax.spines['bottom'].set_color('white')
         ax.tick_params(axis='both', which='both', length=0, labelsize=0,
                        color='white')  # Remove ticks on the axes and set color to white
-
         # Add a legend for the marked element and sorting disabled
         if len(self.lst) > 300:
             legend_labels = ['Animation is disabled \nif array bigger than 300']
@@ -616,13 +618,11 @@ class Ui_MainWindow(object):
             legend_handles = [plt.Rectangle((0, 0), 1, 1, color='navy')]
 
         ax.legend(legend_handles, legend_labels, loc='lower right', ncol=2)
-
         # Adjust the layout to make space for the legend under the plot
         plt.subplots_adjust(left=0.02, right=1, bottom=0.02)
-
         # Redraw the canvas
         self.canvas.draw()
-        # plt.pause(self.mapped_value)
+        # plt.pause(0.0001)
 
 
 if __name__ == "__main__":
@@ -631,5 +631,7 @@ if __name__ == "__main__":
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
-    # app.exec_()
+    FileCreator.deleteFile("temp.txt")
     sys.exit(app.exec_())
+
+
