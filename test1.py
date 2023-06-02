@@ -59,6 +59,7 @@ class Sort:
         else:
             median = right
         self._swap(median, right)
+        return median
 
     @property
     def NumOfOperations(self):
@@ -162,13 +163,14 @@ class QuikSort(Sort):
 
         if self._recursionDepth > self._maxDepth:
             self._maxDepth = self._recursionDepth
-            self._ui.updateCounters(self._comp, self._swaps, self._recursionDepth, self._maxDepth)
+
+        self._ui.updateCounters(self._comp, self._swaps, self._recursionDepth, self._maxDepth)
 
         if left < right:
             if (right - left + 1) <= 3:
                 self._insertionSort(left, right)
             else:
-                self._medianOf3(left, (left + right) // 2, right)
+                p = self._medianOf3(left, (left + right) // 2, right)
                 p = self.__partition(left, right)
                 self.sort(left, p - 1)
                 self.sort(p + 1, right)
@@ -240,5 +242,4 @@ class IntroSort(Sort):
 
         self._recursionDepth -= 1
         self._ui.updateCounters(self._comp, self._swaps, self._recursionDepth, self._maxDepth)
-
 

@@ -21,6 +21,33 @@ from random import randint
 import FileCreator
 
 
+def show_message_box(title, message, icon=QMessageBox.Information):
+    # Create a QMessageBox instance
+    msg_box = QMessageBox()
+
+    # Set the window title
+    msg_box.setWindowTitle(title)
+
+    # Set the message text
+    msg_box.setText(message)
+
+    # Set the icon
+    msg_box.setIcon(icon)
+
+    # Add buttons (optional)
+    msg_box.addButton(QMessageBox.Ok)
+    msg_box.addButton(QMessageBox.Cancel)
+
+    # Execute the message box and retrieve the clicked button
+    clicked_button = msg_box.exec_()
+
+    # Process the clicked button
+    # if clicked_button == QMessageBox.Ok:
+    #     print("OK button clicked.")
+    # elif clicked_button == QMessageBox.Cancel:
+    #     print("Cancel button clicked.")
+
+
 def generate_array(a, b, size):
     arr = []
     i = 0
@@ -54,49 +81,18 @@ def setPl(obj):
 
 
 def settingsForSpinBox(obj, min, max, val, name):
-    style = "QSpinBox {"
-    style += "background-color: rgb(201,217,235);"
-    style += "color: black;"
-    style += "border-style: outset;"
-    style += "border-width: 0px;"
-    style += "border-radius: 5px;"
-    style += "height: 30px;"
-    style += "margin-left: 10px;"
-    style += "padding-left: 20px;"
-    style += "font-size: 14px;"
-    style += "}"
-
-    style += "QSpinBox::up-button, QSpinBox::down-button {"
-    style += "width: 18px;"  # width for the buttons
-    style += "height: 18px;"  # height
-    style += "}"
-
-    obj.setStyleSheet(style)
     obj.setMinimum(min)
     obj.setMaximum(max)
     obj.setProperty("value", val)
     obj.setObjectName(name)
+    obj.setStyleSheet("background-color: rgb(201, 217, 235);")
 
 
 def settingsForComboBox(obj, font, names, objName):
-    # Set the background color and text color of the QComboBox drop-down button when pressed
-    style = "QComboBox {"
-    style += "background-color: rgb(201, 217, 235);"
-    style += "color: black;"
-    style += "border-style: outset;"
-    style += "border-width: 0px;"
-    style += "border-radius: 5px;"
-    style += "height: 30px;"
-    style += "margin-left: 10px;"
-    style += "padding-left: 20px;"
-    style += "font-size: 16px;"
-    style += "}"
-
     obj.setFont(font)
     obj.addItems(names)
-    obj.setStyleSheet(style)
     obj.setObjectName(objName)
-    obj.setStyleSheet(style)
+    obj.setStyleSheet("background-color: rgb(201, 217, 235);")
 
 
 def setLabel(obj, size, weight, name, style="color:rgb(0,0,0);"):
@@ -140,6 +136,8 @@ def setLineEdit(nameField, font, name, param1):
 class Ui_MainWindow(object):
 
     def __init__(self):
+        self.__name = "temp.txt"
+        self.__resultFile = FileCreator.File(self.__name)
         self.flagStop = False
         self.GenerationBtn = None
         self.generationFlag = False
@@ -474,44 +472,54 @@ class Ui_MainWindow(object):
 
     def ani_time(self):
         # Determine sort wait time scaled to bars amount
-        ani_interval = self.horizontalSlider.value()/1000000000
+        ani_interval = self.horizontalSlider.value()/1000000
         return ani_interval
 
     def comboBoxChanged(self, name):
         self.choice = name
 
     def save(self):
-        if self.nameField.text():
+        if self.nameField.text() and os.path.exists(self.__name):
             new_filename = self.nameField.text()+".txt"
-            shutil.copy2("temp.txt", new_filename)
+            shutil.copy2(self.__name, new_filename)
+            if not self.flagStop:
+                show_message_box(f"Successfully saved", f"Array wasn't sorted!\nResults are saved in {self.nameField.text()}.txt")
+            else:
+                show_message_box(f"Successfully saved", f"Results are saved in {self.nameField.text()}.txt")
+        elif not self.lst:
+            show_message_box("Array is None", "Nothing to record to the file!")
+        elif not self.nameField.text():
+            show_message_box("Name is not entered", "Enter name of the file!")
+        else:
+            show_message_box("Unexpected error", "Error has occurred, check entered data!")
 
     def setStopFlag(self):
         self.flagStop=True
 
-    def checkInterval(self, n, a, b):
-        if n < b:
-            return a, b
-        elif b < a:
-            self.spinBox_limitB.setValue(a)  # Set b equal to a
-            return a, a + n
-        elif n > b - a:
-            self.spinBox_limitB.setValue(a + n)  # Set b equal to a + n
-            return a, a + n
-        elif b == 50000 and (b - a) < n:
-            self.spinBox_limitA.setValue(50000 - n)
-            return 50000 - n, b
-        else:
-            self.spinBox_limitB.setValue(b)
-            return a, b
+    def checkInterval(self):
+        valid = False
+        while not valid:
+
+            n = self.n
+            a = self.spinBox_limitA.value()
+            b = self.spinBox_limitB.value()
+
+            if b<a or (b-a)<n:
+                show_message_box("Invalid interval", "Interval is invalid! \nDefault values are set.")
+                self.spinBox_limitB.setValue(a + n)  # Set b equal to a + n
+            else:
+                valid = True
+
+        return a, a + n
 
     def generate(self):
         self.updateCounters(0, 0, 0, 0)
         self.generationFlag = True
         self.n = self.spinBox_Size.value()
         # Generate the data to sort
-        a, b = self.checkInterval(self.n, self.spinBox_limitA.value(),self.spinBox_limitB.value())
+        a, b = self.checkInterval()
         self.lst = generate_array(a, b, self.n)
-        FileCreator.saveInTxtFile(self.lst, 'w')
+        self.__resultFile.saveInTxtFile(self.lst, 'w')
         fillScrollArea(self.scrollAreaUS, FileCreator.convert(self.lst))
         ui.plot()
 
@@ -521,7 +529,6 @@ class Ui_MainWindow(object):
         # Set up the animation timer
         self.timer = self.canvas.new_timer(interval=100,
                                            callbacks=[(self.animate, [], {})])
-        print(self.sortingTime)
         # Start the sorting algorithm
         self.processSorting()
 
@@ -551,19 +558,20 @@ class Ui_MainWindow(object):
         SORT.sort(0, self.n - 1)
         fillScrollArea(self.scrollAreaS, FileCreator.convert(self.lst))
         if not self.saveFlag:
-            FileCreator.saveInTxtFile(self.lst, 'a')
+            self.__resultFile.saveInTxtFile(self.lst, 'a')
         # SORT.printArr()
         x, y, z, v = SORT.NumOfOperations
         # print("Number of swaps:", x)
         # print("Number of comparisons:", y)
         # print("Recursion depth:", z)
         # print("Max depth:", v)
-        FileCreator.appendOperations(x, y, z, v)
+        self.__resultFile.appendOperations(x, y, z, v)
         if self.n <= 300:
             ui.plot()
         self.timer.stop()
         self.buttonsStatus(False)
-        self.generationFlag=False
+        if not self.flagStop:
+            self.generationFlag = False
         self.flagStop=False
 
     def updateCounters(self, swaps=0, comp=0, recDepth=0, maxDepth=0):
@@ -576,7 +584,7 @@ class Ui_MainWindow(object):
         # Clear the previous plot
         self.figure.clear()
         time.sleep(self.ani_time())
-        # time.sleep(0.1) - time.sleep(0.00000001)
+        # from time.sleep(0.1) to time.sleep(0.00000001)
         ax = self.figure.add_subplot(111)
 
         # Plot the bars with the color
@@ -590,7 +598,11 @@ class Ui_MainWindow(object):
 
         ax.set_facecolor('white')
         self.x = np.arange(0, self.n, 1)
-        ax.bar(self.x[:min(self.n, 300)], self.lst[:min(self.n, 300)], color=colors, width=1)  # display only 100 bars
+        ax.bar(self.x[:min(self.n, 300)], self.lst[:min(self.n, 300)], color=colors, width=1)
+
+        # if self.n>300:
+        #     ax.bar(self.x[:min(self.n, 100)], self.lst[:min(self.n, 100)], color=colors, width=1)
+
         # Remove unnecessary elements and change their color to white
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -616,6 +628,10 @@ class Ui_MainWindow(object):
         # Redraw the canvas
         self.canvas.draw()
 
+    @property
+    def nameOfFile(self):
+        return self.__name
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
@@ -623,7 +639,6 @@ if __name__ == "__main__":
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
-    FileCreator.deleteFile("temp.txt")
+    FileCreator.deleteFile(ui.nameOfFile)
     sys.exit(app.exec_())
-
 
