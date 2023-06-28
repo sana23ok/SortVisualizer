@@ -42,4 +42,3 @@ class File:
     @property
     def fileName(self):
         return self.__temp
-
